@@ -10,7 +10,7 @@ Our group wanted to make our own version of "World of Tanks" where the players a
 This repo is divided into two sections: "Testing" and "Development." The former contains projects used to test individual components or certain combinations, while the latter contains the projects that we will use in our final uploads.
 
 ## Functional Diagram
-//Image here
+![image](https://github.com/kylerod22/world-of-laser-tanks/assets/95047264/7dba4668-064a-4153-bb55-096710bce11f)
 
 https://lucid.app/lucidchart/12ba26ac-ad22-4cd6-ad6b-3e57993b56a6/edit?view_items=QffTtPlSCTbG&invitationId=inv_eee534a5-d97f-417b-9019-eea6b3811451
 
