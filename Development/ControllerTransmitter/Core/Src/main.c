@@ -65,40 +65,70 @@ static void MX_USART6_UART_Init(void);
 /* USER CODE BEGIN 0 */
 
 static uint8_t uart_rx_buf[1] = {};
+int update_score = 0;
+int tank_ready[] = {0, 0};
 
 const int NUM_PLAYERS = 2;
 int red_score = 0, blue_score = 0;
+int display_delay = 50;
 
 GPIO_TypeDef *cs_ports[2] = {GPIOC, GPIOC};
 uint16_t cs_pins[2] = {GPIO_PIN_9, GPIO_PIN_8};
 
 
 void Update_Display() {
+	//Clear, set x and y back to 0
 	uint8_t tx_buf[10] = {0x7C, 0x00};
+	HAL_UART_Transmit(&huart6, tx_buf, 2, 10);
+	HAL_Delay(display_delay);
+	tx_buf[1] = 0x18;
+	tx_buf[2] = 30;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(display_delay);
+	tx_buf[1] = 0x19;
+	tx_buf[2] = 0x00;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(display_delay);
+	tx_buf[1] = 0x02;
+	tx_buf[2] = 100;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(display_delay);
+
+	//HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+
+	//Display Scoreboard on first row
+
+	uint8_t scoreboard_buf[] = {'S', 'c', 'o', 'r', 'e', 'b', 'o', 'a', 'r', 'd'};
+	HAL_UART_Transmit(&huart6, scoreboard_buf, sizeof(scoreboard_buf), 10);
+	HAL_Delay(display_delay);
+
+
+
+	//uint8_t tx_buf[10] = {0x7C, 0x00};
 	uint8_t red_buf[] = {'R', 'e', 'd', ':', ' ', red_score + '0'};
 
 	tx_buf[1] = 0x18;
 	tx_buf[2] = 0;
 	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
-	HAL_Delay(100);
+	HAL_Delay(display_delay);
 	tx_buf[1] = 0x19;
 	tx_buf[2] = 25;
 	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
-	HAL_Delay(100);
+	HAL_Delay(display_delay);
 
 	HAL_UART_Transmit(&huart6, red_buf, sizeof(red_buf), 10);
-	HAL_Delay(100);
+	HAL_Delay(display_delay);
 
 	uint8_t blue_buf[] = {'B', 'l', 'u', 'e', ':', ' ', blue_score + '0'};
 	tx_buf[1] = 0x18;
 	tx_buf[2] = 70;
 	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
-	HAL_Delay(100);
+	HAL_Delay(display_delay);
 
 	//Set cursor to third row
 
 	HAL_UART_Transmit(&huart6, blue_buf, sizeof(blue_buf), 10);
-	HAL_Delay(100);
+	HAL_Delay(display_delay);
 }
 
 void poll_tank(uint8_t tank_id) {
@@ -121,64 +151,40 @@ void poll_tank(uint8_t tank_id) {
 	uint8_t data_packet_buf[4] = {tank_id, rx_buf[4], rx_buf[7], rx_buf[8]};
 
 	//Keep on listening
-	HAL_UART_Receive_IT(&huart1, uart_rx_buf, 1);
+	//HAL_UART_Receive_IT(&huart1, uart_rx_buf, 1);
 	HAL_UART_Transmit(&huart1, data_packet_buf, sizeof(data_packet_buf), 10);
+	//tank_ready[tank_id] = 0;
 }
 
-/*void updateScore(uint8_t tank_id) {
+void updateScore(uint8_t tank_id) {
 	if(tank_id){
 		red_score++;
 	} else {
 		blue_score++;
 	}
-	Update_Display();
-}*/
+	update_score = 1;
+}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	//Logic here about detecting which tank is sending to us
 	//Most significant 4 bits are command, least significant 4 bits are tank ID
 	uint8_t tank_id = uart_rx_buf[0] & 0b1111;
 	uint8_t cmd = (uart_rx_buf[0] & ~0b1111) >> 4;
-
+	//tank_ready[tank_id] = 1;
 	if (cmd == 0) {
 		poll_tank(tank_id);
-	} /*else if(cmd == 1){
+	} else if(cmd == 1){
 		poll_tank(tank_id);
 		updateScore(tank_id);
-	}*/ else {
+	} else {
 		HAL_UART_Receive_IT(&huart1, uart_rx_buf, 1);
 	}
+
+	//if (cmd == 1) updateScore(tank_id);
+	HAL_UART_Receive_IT(&huart1, uart_rx_buf, 1);
 }
 
 
-void Display_Init() {
-	//Clear, set x and y back to 0
-	uint8_t tx_buf[10] = {0x7C, 0x00};
-	HAL_UART_Transmit(&huart6, tx_buf, 2, 10);
-	HAL_Delay(100);
-	tx_buf[1] = 0x18;
-	tx_buf[2] = 30;
-	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
-	HAL_Delay(100);
-	tx_buf[1] = 0x19;
-	tx_buf[2] = 0x00;
-	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
-	HAL_Delay(100);
-	tx_buf[1] = 0x02;
-	tx_buf[2] = 100;
-	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
-	HAL_Delay(100);
-
-	//HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
-
-	//Display Scoreboard on first row
-
-	uint8_t scoreboard_buf[] = {'S', 'c', 'o', 'r', 'e', 'b', 'o', 'a', 'r', 'd'};
-	HAL_UART_Transmit(&huart6, scoreboard_buf, sizeof(scoreboard_buf), 10);
-	HAL_Delay(100);
-
-	Update_Display();
-}
 
 
 
@@ -283,7 +289,7 @@ int main(void)
   HAL_Delay(1);
   Controller_Init(1);
   HAL_Delay(1);
-  Display_Init();
+  Update_Display();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -297,9 +303,19 @@ int main(void)
   HAL_UART_Receive_IT(&huart1, uart_rx_buf, 1);
   while (1)
   {
+	  if (update_score) {
+		  Update_Display();
+		  update_score = 0;
+	  }
 
+	  /*for (int i = 0; i < NUM_PLAYERS; i++) {
+		  if (tank_ready[i]) {
+			  poll_tank(i);
+		  }
+	  }*/
 	/*uint8_t header_buf[9] = {0x01, 0x42};
 	uint8_t rx_buf[9];
+
 
     //Poll the tank
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);

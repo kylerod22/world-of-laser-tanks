@@ -23,7 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 extern int disabled;
-extern int tx_data;
+extern const int TANK_ID;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -206,7 +206,13 @@ void SysTick_Handler(void)
 void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
-	disabled = 1;
+	if (!disabled) {
+		uint8_t tx_buf[] = {(1 << 4) + TANK_ID};
+		HAL_UART_Transmit(&huart6, tx_buf, 1, 10);
+		disabled = 1;
+	}
+
+
 	//tx_data |= 0b10000;
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);

@@ -74,14 +74,14 @@ static void MX_TIM10_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-const int TANK_ID = 0; //MAKE SURE TO UPDATE FOR EVERY TANK
+const int TANK_ID = 1; //MAKE SURE TO UPDATE FOR EVERY TANK
 //int tx_data = TANK_ID;
 int blast = 0;
 int disabled = 0;
 
 
 const int MAX_CCR = 17;
-const int TIMEOUT_POLL_MILLIS = 100000;
+const int TIMEOUT_POLL_MILLIS = 20000;
 const int BUZZER_DURATION = 5000;
 static uint8_t tx_buf[] = {TANK_ID};
 static uint8_t rx_data[4];
@@ -626,7 +626,7 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 83;
+  htim5.Init.Prescaler = 8399;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
