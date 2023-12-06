@@ -44,6 +44,7 @@ SPI_HandleTypeDef hspi3;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart6;
 
 /* USER CODE BEGIN PV */
 
@@ -55,6 +56,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_USART6_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -65,12 +67,39 @@ static void MX_USART1_UART_Init(void);
 static uint8_t uart_rx_buf[1] = {};
 
 const int NUM_PLAYERS = 2;
+int red_score = 0, blue_score = 0;
 
 GPIO_TypeDef *cs_ports[2] = {GPIOC, GPIOC};
 uint16_t cs_pins[2] = {GPIO_PIN_9, GPIO_PIN_8};
 
 
+void Update_Display() {
+	uint8_t tx_buf[10] = {0x7C, 0x00};
+	uint8_t red_buf[] = {'R', 'e', 'd', ':', ' ', red_score + '0'};
 
+	tx_buf[1] = 0x18;
+	tx_buf[2] = 0;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(100);
+	tx_buf[1] = 0x19;
+	tx_buf[2] = 25;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(100);
+
+	HAL_UART_Transmit(&huart6, red_buf, sizeof(red_buf), 10);
+	HAL_Delay(100);
+
+	uint8_t blue_buf[] = {'B', 'l', 'u', 'e', ':', ' ', blue_score + '0'};
+	tx_buf[1] = 0x18;
+	tx_buf[2] = 70;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(100);
+
+	//Set cursor to third row
+
+	HAL_UART_Transmit(&huart6, blue_buf, sizeof(blue_buf), 10);
+	HAL_Delay(100);
+}
 
 void poll_tank(uint8_t tank_id) {
 	//Poll corresponding controller
@@ -96,6 +125,15 @@ void poll_tank(uint8_t tank_id) {
 	HAL_UART_Transmit(&huart1, data_packet_buf, sizeof(data_packet_buf), 10);
 }
 
+/*void updateScore(uint8_t tank_id) {
+	if(tank_id){
+		red_score++;
+	} else {
+		blue_score++;
+	}
+	Update_Display();
+}*/
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	//Logic here about detecting which tank is sending to us
 	//Most significant 4 bits are command, least significant 4 bits are tank ID
@@ -104,10 +142,45 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 	if (cmd == 0) {
 		poll_tank(tank_id);
-	} else {
+	} /*else if(cmd == 1){
+		poll_tank(tank_id);
+		updateScore(tank_id);
+	}*/ else {
 		HAL_UART_Receive_IT(&huart1, uart_rx_buf, 1);
 	}
 }
+
+
+void Display_Init() {
+	//Clear, set x and y back to 0
+	uint8_t tx_buf[10] = {0x7C, 0x00};
+	HAL_UART_Transmit(&huart6, tx_buf, 2, 10);
+	HAL_Delay(100);
+	tx_buf[1] = 0x18;
+	tx_buf[2] = 30;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(100);
+	tx_buf[1] = 0x19;
+	tx_buf[2] = 0x00;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(100);
+	tx_buf[1] = 0x02;
+	tx_buf[2] = 100;
+	HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+	HAL_Delay(100);
+
+	//HAL_UART_Transmit(&huart6, tx_buf, 3, 10);
+
+	//Display Scoreboard on first row
+
+	uint8_t scoreboard_buf[] = {'S', 'c', 'o', 'r', 'e', 'b', 'o', 'a', 'r', 'd'};
+	HAL_UART_Transmit(&huart6, scoreboard_buf, sizeof(scoreboard_buf), 10);
+	HAL_Delay(100);
+
+	Update_Display();
+}
+
+
 
 
 
@@ -203,11 +276,14 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI3_Init();
   MX_USART1_UART_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
   Controller_Init(0);
   HAL_Delay(1);
   Controller_Init(1);
+  HAL_Delay(1);
+  Display_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -394,6 +470,39 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief USART6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART6_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+
+  /* USER CODE END USART6_Init 1 */
+  huart6.Instance = USART6;
+  huart6.Init.BaudRate = 115200;
+  huart6.Init.WordLength = UART_WORDLENGTH_8B;
+  huart6.Init.StopBits = UART_STOPBITS_1;
+  huart6.Init.Parity = UART_PARITY_NONE;
+  huart6.Init.Mode = UART_MODE_TX_RX;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
 
 }
 
