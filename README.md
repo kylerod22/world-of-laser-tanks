@@ -44,8 +44,10 @@ https://lucid.app/lucidchart/12ba26ac-ad22-4cd6-ad6b-3e57993b56a6/edit?view_item
 - PWM Generators
     - Right Motor Speed (TIM3_CH2): PC_7
     - Left Motor Speed (TIM4_CH1): PB_6
-    - Servo TBD
+    - Servo (TIM2_CH1): PA_0
+    - IR Transmitter (TIM1_CH3): PA_10
 - GPIO Pins
     - Right Motor Direction: PA_8
         - LOW is forward, HIGH is backward.
     - Left Motor Direction: PA_9
+    - IR Receiver (External Interrupt Mode): PC_0
